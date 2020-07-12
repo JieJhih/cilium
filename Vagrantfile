@@ -60,6 +60,7 @@ mv bpf-map /usr/bin
 SCRIPT
 
 $makeclean = ENV['MAKECLEAN'] ? "export MAKECLEAN=1" : ""
+$kvstore = ENV['RUN_KVSTORE'] ? "export RUN_KVSTORE=1" : ""
 $build = <<SCRIPT
 set -o errexit
 set -o nounset
@@ -92,6 +93,10 @@ SCRIPT
 
 $testsuite = <<SCRIPT
 sudo -E env PATH="${PATH}" make -C ~/go/src/github.com/cilium/cilium/ runtime-tests
+SCRIPT
+
+$kvstore = <<SCRIPT
+sudo -E make -C ~/go/src/github.com/cilium/cilium/ start-kvstores
 SCRIPT
 
 $node_ip_base = ENV['IPV4_BASE_ADDR'] || ""
@@ -210,6 +215,10 @@ Vagrant.configure(2) do |config|
         if ENV['RUN_TEST_SUITE'] then
            cm.vm.provision "testsuite", run: "always", type: "shell", privileged: false, inline: $testsuite
         end
+        if ENV['RUN_KVSTORE'] then
+           cm.vm.provision "install", run: "always", type: "shell", privileged: false, inline: $kvstore
+        end
+
     end
 
     $num_workers.times do |n|
